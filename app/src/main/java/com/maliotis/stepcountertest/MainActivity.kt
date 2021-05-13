@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         //startService()
 
         // restart service every hour to save the current step count
-        val nextUpdateCalendar: Long = Calendar.getInstance().apply {
+        var nextUpdateCalendar: Long = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 1)
@@ -93,6 +93,8 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "onCreate: date is in the future :)")
         } else {
             Log.d(TAG, "onCreate: date is in the past :(")
+            //if next update is before current date then postpone it to next day
+            nextUpdateCalendar += AlarmManager.INTERVAL_DAY
         }
 
         val am = applicationContext.getSystemService(ALARM_SERVICE) as AlarmManager

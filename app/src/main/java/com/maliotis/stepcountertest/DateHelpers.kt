@@ -16,7 +16,7 @@ fun Date.toCalendar(): Calendar {
     return cal
 }
 
-fun getDayDifference(todaysDate: Date, context: Context, maxDiff: Long): Boolean {
+fun getDayDifference(todaysDate: Date, context: Context, minDiff: Long): Boolean {
     val dateYesterdayStepsString = getDayForYesterdaysSteps(context)
     if (dateYesterdayStepsString == "") {
         // this is the first time so return true
@@ -27,7 +27,7 @@ fun getDayDifference(todaysDate: Date, context: Context, maxDiff: Long): Boolean
     return if (oldDate != null) {
         val diff = todaysDate.time - oldDate.time
         val days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS)
-        days == maxDiff
+        days > minDiff
     } else {
         false
     }

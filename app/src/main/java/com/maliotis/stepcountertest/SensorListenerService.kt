@@ -52,31 +52,19 @@ class SensorListenerService : Service() {
 
 
         // should be executed once every time the alarm manager wakes up the service
-        return if (hours == 0 && minutes < 10 && getDayDifference(calendar.time, applicationContext, 2L)) {
-
-            // logic
-            //0: currentTotal = 0, todays = 0, yesterdays = 0, oldTotalSteps = 0
-            //1: currentTotal = 1000, todays = 1000, yesterdays = 0, oldTotalSteps = 0
-            //2: currentTotal = 2300, todays = 1300, yesterdays = 1000, oldTotalSteps = 1000
-            //3: currentTotal = 3000, todays = 700, yesterdays = 1300, oldTotalSteps = 2300
-            //4: currentTotal = 4000, todays = 1000, yesterdays = 700, oldTotalSteps = 3000
-
-
-            //yesterdays = todays
-            //todays = currentTotal - oldTotalSteps
-            //oldTotalSteps = currentTotal
-
-            val todaysSteps = getTodaysSteps(applicationContext)
-            writeYesterdaysSteps(applicationContext, todaysSteps)
-            val newTodaysSteps = steps - getOldTotalSteps(applicationContext)
-            writeTodaysSteps(applicationContext, newTodaysSteps)
+        return if (steps >= 0 && hours == 0 && minutes < 10 && getDayDifference(calendar.time, applicationContext, 1L)) {
+            //retrieve old total
+            val oldTotalSteps = getOldTotalSteps(applicationContext)
+            //compute daily steps by difference between new total and old total
+            val yesterdaySteps = steps - oldTotalSteps
+            //update both daily and total steps
+            writeYesterdaysSteps(applicationContext, yesterdaySteps)
             writeOldTotalSteps(applicationContext, steps)
-
-
+            //get date of last update
             val yesterdaysDate = DateFormat.getDateInstance(DateFormat.LONG).format(Date().getYesterdaysDate())
             // debug
 //            val yesterdaysDay = yesterdaysDate.get(Calendar.DAY_OF_MONTH)
-
+            //update date of last update
             writeDayForYesterdaysSteps(applicationContext, yesterdaysDate.toString())
             showNotification() // update notification
             Log.d(TAG, "updateIfNecessary: set new steps")
@@ -178,7 +166,8 @@ class SensorListenerService : Service() {
         const val fiveMinInMicroS = 60000000 * 5
 
         const val NOTIFICATION_ID = 1
-        private var steps = 0
+        //initialize total steps with a special value
+        private var steps = -1
 
 
         const val NOTIFICATION_CHANNEL_ID = "Notification"
@@ -188,7 +177,7 @@ class SensorListenerService : Service() {
                 if (Build.VERSION.SDK_INT >= 26) getNotificationBuilder(context) else Notification.Builder(
                     context
                 )
-            if (steps > 0 || getYesterdaysSteps(context) == 0) {
+            if (getTodaysSteps(context) > 0 || getYesterdaysSteps(context) >= 0) {
 
                 notificationBuilder
                 ?.setContentTitle("Step Counter")
@@ -197,8 +186,7 @@ class SensorListenerService : Service() {
                         getYesterdaysSteps(
                             context
                         )
-                    }\n" +
-                            " Todays Steps: ${(getYesterdaysSteps(context) - steps).absoluteValue}"))
+                    }\n"))
             } else { // still no step value?
                 notificationBuilder?.setContentText("No steps :(")
                     ?.setContentTitle("Step Counter")
